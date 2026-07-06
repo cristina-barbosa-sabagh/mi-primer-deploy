@@ -2,6 +2,16 @@ const cv = document.getElementById('game');
 const ctx = cv.getContext('2d');
 const W = cv.width, H = cv.height, GROUND = H - 60;
 
+// MISMA clave y forma que usa tracker.html: { id, name, score }
+const STORAGE_KEY = 'tracker-scores';
+
+const saveOverlay = document.getElementById('saveOverlay');
+const playerNameEl = document.getElementById('playerName');
+const saveBtn = document.getElementById('saveBtn');
+const saveMsg = document.getElementById('saveMsg');
+
+let awaitingSave = false;   // true mientras se espera guardar el puntaje
+
 const player = { x: 80, y: GROUND, r: 18, vy: 0, jumping: false };
 const GRAVITY = 0.9, JUMP = -15;
 
@@ -15,15 +25,61 @@ function reset() {
   spawnGap = 90; nextSpawn = spawnGap;
   player.y = GROUND; player.vy = 0; player.jumping = false;
   state = 'play';
+  saveOverlay.hidden = true;
+  playerNameEl.value = '';
 }
 
 function jump() {
-  if (state === 'over') { reset(); return; }
+  if (state === 'over') {
+    if (awaitingSave) return;      // no reinicia hasta guardar
+    reset();
+    return;
+  }
   if (!player.jumping) { player.vy = JUMP; player.jumping = true; }
 }
 
+function gameOver() {
+  state = 'over';
+  awaitingSave = true;
+  saveMsg.textContent = '';
+  saveMsg.classList.remove('ok');
+  saveBtn.disabled = false;
+  saveOverlay.hidden = false;
+  playerNameEl.focus();
+}
+
+function saveScore() {
+  const name = playerNameEl.value.trim();
+  if (!name) {
+    saveMsg.textContent = 'Escribí tu nombre.';
+    saveMsg.classList.remove('ok');
+    return;
+  }
+  let scores;
+  try { scores = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { scores = []; }
+
+  scores.push({
+    id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    name,
+    score
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+
+  awaitingSave = false;
+  saveBtn.disabled = true;
+  saveMsg.textContent = '✓ Guardado. Tocá o espacio para jugar de nuevo.';
+  saveMsg.classList.add('ok');
+}
+
+saveBtn.addEventListener('click', saveScore);
+playerNameEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); saveScore(); }
+});
+
 // Controles: espacio, clic y tap
 window.addEventListener('keydown', e => {
+  if (e.target === playerNameEl) return;          // dejá escribir en el input
   if (e.code === 'Space') { e.preventDefault(); jump(); }
 });
 cv.addEventListener('mousedown', jump);
@@ -95,7 +151,7 @@ function loop() {
       const py = player.y, ph = 26 + player.r;
       const hitX = player.x + 8 > o.x && player.x - 8 < o.x + o.w;
       const hitY = py > GROUND - o.h;
-      if (hitX && hitY) state = 'over';
+      if (hitX && hitY) gameOver();
     }
   }
 

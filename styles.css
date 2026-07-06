@@ -14,3 +14,55 @@ canvas {
   box-shadow: 0 10px 30px rgba(30,41,59,.25);
   display: block; max-width: 95vw; height: auto; touch-action: manipulation;
 }
+
+/* Overlay para guardar el puntaje en Game Over */
+.save-overlay {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  width: min(90%, 380px);
+  background: rgba(30, 41, 59, .96);
+  border: 1px solid #475569;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  text-align: center;
+}
+.save-overlay[hidden] { display: none; }
+.save-title {
+  margin: 0 0 10px;
+  color: #e2e8f0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.save-row { display: flex; gap: 8px; }
+.save-overlay input {
+  flex: 1;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 14px;
+}
+.save-overlay input:focus { outline: none; border-color: #6366f1; }
+.save-overlay button {
+  padding: 9px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.save-overlay button:hover { background: #4f46e5; }
+.save-overlay button:disabled { opacity: .5; cursor: default; }
+.save-msg {
+  margin: 8px 0 0;
+  min-height: 16px;
+  font-size: 13px;
+  color: #f87171;
+}
+.save-msg.ok { color: #4ade80; }

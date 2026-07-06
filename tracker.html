@@ -263,6 +263,13 @@
       render();
     });
 
+    // Se actualiza en vivo cuando el juego (otra pestaña) guarda un puntaje
+    window.addEventListener('storage', e => {
+      if (e.key === STORAGE_KEY) render();
+    });
+    // Y al volver a esta pestaña, por las dudas
+    window.addEventListener('focus', render);
+
     render();
   </script>
 </body>

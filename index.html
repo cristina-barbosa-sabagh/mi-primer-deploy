@@ -9,8 +9,20 @@
 <body>
   <h1>Mi primer juego</h1>
   <p class="hint">Toca o presiona espacio para saltar</p>
+  <p class="hint"><a id="trackerLink" href="tracker.html" target="tracker">🏆 Ver tabla de puntajes</a></p>
   <div id="wrap">
     <canvas id="game" width="640" height="320"></canvas>
+
+    <!-- Overlay que aparece solo en Game Over para guardar el puntaje -->
+    <div id="saveOverlay" class="save-overlay" hidden>
+      <p class="save-title">Guardá tu puntaje</p>
+      <div class="save-row">
+        <input id="playerName" type="text" placeholder="Tu nombre"
+               maxlength="30" autocomplete="off" />
+        <button id="saveBtn" type="button">Guardar puntaje</button>
+      </div>
+      <p class="save-msg" id="saveMsg"></p>
+    </div>
   </div>
 
   <script src="game.js"></script>
