@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tracker de Puntajes</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --gold: #fbbf24;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+    .container {
+      width: 100%;
+      max-width: 640px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+      margin-bottom: 24px;
+    }
+    form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .field { flex: 1; min-width: 140px; }
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: var(--text);
+      font-size: 15px;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    button {
+      align-self: flex-end;
+      padding: 11px 20px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    button:hover { background: var(--accent-hover); }
+    .error {
+      color: #f87171;
+      font-size: 13px;
+      margin-top: 10px;
+      min-height: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      font-size: 13px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    td.rank { width: 48px; color: var(--muted); font-weight: 600; }
+    td.score { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    th.score { text-align: right; }
+    tr:last-child td { border-bottom: none; }
+    .top td { color: var(--gold); }
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 28px 0;
+      font-size: 15px;
+    }
+    .del {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 0 4px;
+    }
+    .del:hover { color: #f87171; background: none; }
+    td.actions { width: 36px; text-align: right; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏆 Tracker de Puntajes</h1>
+      <p>Registrá los puntajes de tu juego y mirá quién va ganando</p>
+    </header>
+
+    <div class="card">
+      <form id="form">
+        <div class="field">
+          <label for="name">Jugador</label>
+          <input id="name" type="text" placeholder="Nombre" autocomplete="off" maxlength="30" />
+        </div>
+        <div class="field">
+          <label for="score">Puntaje</label>
+          <input id="score" type="number" placeholder="0" min="0" step="1" />
+        </div>
+        <button type="submit">Agregar</button>
+      </form>
+      <div class="error" id="error"></div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th class="rank">#</th>
+            <th>Jugador</th>
+            <th class="score">Puntaje</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="empty">Todavía no hay puntajes. ¡Agregá el primero!</div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'tracker-scores';
+    const form = document.getElementById('form');
+    const nameEl = document.getElementById('name');
+    const scoreEl = document.getElementById('score');
+    const errorEl = document.getElementById('error');
+    const tbody = document.getElementById('tbody');
+    const emptyEl = document.getElementById('empty');
+
+    function load() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function save(scores) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+    }
+
+    function render() {
+      const scores = load().sort((a, b) => b.score - a.score);
+      tbody.innerHTML = '';
+      emptyEl.style.display = scores.length ? 'none' : 'block';
+
+      scores.forEach((s, i) => {
+        const tr = document.createElement('tr');
+        if (i === 0) tr.className = 'top';
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+
+        const rank = document.createElement('td');
+        rank.className = 'rank';
+        rank.textContent = medal;
+
+        const name = document.createElement('td');
+        name.textContent = s.name;
+
+        const score = document.createElement('td');
+        score.className = 'score';
+        score.textContent = s.score;
+
+        const actions = document.createElement('td');
+        actions.className = 'actions';
+        const del = document.createElement('button');
+        del.className = 'del';
+        del.textContent = '✕';
+        del.title = 'Eliminar';
+        del.onclick = () => remove(s.id);
+        actions.appendChild(del);
+
+        tr.append(rank, name, score, actions);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function remove(id) {
+      save(load().filter(s => s.id !== id));
+      render();
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      errorEl.textContent = '';
+
+      const name = nameEl.value.trim();
+      const scoreRaw = scoreEl.value.trim();
+
+      if (!name) {
+        errorEl.textContent = 'Ingresá el nombre del jugador.';
+        return;
+      }
+      if (scoreRaw === '' || isNaN(Number(scoreRaw))) {
+        errorEl.textContent = 'Ingresá un puntaje válido.';
+        return;
+      }
+
+      const score = Math.floor(Number(scoreRaw));
+      if (score < 0) {
+        errorEl.textContent = 'El puntaje no puede ser negativo.';
+        return;
+      }
+
+      const scores = load();
+      scores.push({ id: Date.now() + '-' + Math.random().toString(36).slice(2, 7), name, score });
+      save(scores);
+
+      form.reset();
+      nameEl.focus();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
